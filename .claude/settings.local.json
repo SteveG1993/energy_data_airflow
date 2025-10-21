@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(~/airflow_venv/bin/airflow version)",
+      "Read(//Users/stevengregoire/airflow_venv/bin/**)",
+      "Bash(cat airflow.cfg)",
+      "Bash(~/airflow_venv/bin/airflow cheat-sheet)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

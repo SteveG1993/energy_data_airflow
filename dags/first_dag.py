@@ -1,0 +1,236 @@
+"""
+Test DAG for Airflow Installation Verification
+Purpose: Verify that Apache Airflow is properly installed and configured
+Author: Data Engineer Portfolio
+"""
+
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.utils.dates import days_ago
+import logging
+import sys
+import platform
+
+# Configure default arguments
+default_args = {
+    'owner': 'test-user',
+    'depends_on_past': False,
+    'start_date': days_ago(1),
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=1)
+}
+
+# Create DAG instance
+dag = DAG(
+    'test_airflow_installation',
+    default_args=default_args,
+    description='Test DAG to verify Airflow installation',
+    schedule_interval=None,  # Manual trigger only
+    catchup=False,
+    tags=['test', 'verification', 'setup']
+)
+
+# Task 1: Check Python environment
+def check_python_env(**context):
+    """Check Python version and environment details"""
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 50)
+    logger.info("PYTHON ENVIRONMENT CHECK")
+    logger.info("=" * 50)
+    
+    python_version = sys.version
+    logger.info(f"Python Version: {python_version}")
+    logger.info(f"Platform: {platform.platform()}")
+    logger.info(f"Machine: {platform.machine()}")
+    logger.info(f"Processor: {platform.processor()}")
+    
+    # Check execution date from context
+    exec_date = context['execution_date']
+    logger.info(f"Execution Date: {exec_date}")
+    logger.info(f"DAG Run ID: {context['run_id']}")
+    
+    return f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+# Task 2: Test data processing
+def process_sample_data(**context):
+    """Simulate data processing task"""
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 50)
+    logger.info("DATA PROCESSING SIMULATION")
+    logger.info("=" * 50)
+    
+    # Simulate data processing
+    sample_data = [1, 2, 3, 4, 5]
+    processed_data = [x * 2 for x in sample_data]
+    
+    logger.info(f"Input data: {sample_data}")
+    logger.info(f"Processed data: {processed_data}")
+    
+    # Use XCom to pass data between tasks
+    context['task_instance'].xcom_push(key='processed_data', value=processed_data)
+    
+    return f"Processed {len(processed_data)} records"
+
+# Task 3: Retrieve and validate data
+def validate_data(**context):
+    """Retrieve data from previous task using XCom"""
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 50)
+    logger.info("DATA VALIDATION")
+    logger.info("=" * 50)
+    
+    # Pull data from previous task
+    task_instance = context['task_instance']
+    processed_data = task_instance.xcom_pull(task_ids='process_data', key='processed_data')
+    
+    if processed_data:
+        logger.info(f"Retrieved data: {processed_data}")
+        logger.info(f"Data validation: PASSED")
+        logger.info(f"Sum of processed data: {sum(processed_data)}")
+        return "Validation successful"
+    else:
+        logger.error("No data retrieved from previous task")
+        raise ValueError("Data validation failed")
+
+# Task 4: Test imports
+def test_common_imports(**context):
+    """Test common data engineering library imports"""
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 50)
+    logger.info("TESTING COMMON LIBRARY IMPORTS")
+    logger.info("=" * 50)
+    
+    libraries = []
+    
+    # Test standard libraries
+    try:
+        import json
+        libraries.append(('json', '✓'))
+    except ImportError:
+        libraries.append(('json', '✗'))
+    
+    try:
+        import csv
+        libraries.append(('csv', '✓'))
+    except ImportError:
+        libraries.append(('csv', '✗'))
+    
+    try:
+        import datetime
+        libraries.append(('datetime', '✓'))
+    except ImportError:
+        libraries.append(('datetime', '✗'))
+    
+    # Test data libraries (may not be installed)
+    try:
+        import pandas as pd
+        libraries.append(('pandas', f'✓ (version {pd.__version__})'))
+    except ImportError:
+        libraries.append(('pandas', '✗ (not installed - optional)'))
+    
+    try:
+        import numpy as np
+        libraries.append(('numpy', f'✓ (version {np.__version__})'))
+    except ImportError:
+        libraries.append(('numpy', '✗ (not installed - optional)'))
+    
+    for lib, status in libraries:
+        logger.info(f"{lib}: {status}")
+    
+    return f"Tested {len(libraries)} libraries"
+
+# Task 5: System information
+def check_system_resources(**context):
+    """Check system resources and Airflow configuration"""
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 50)
+    logger.info("SYSTEM RESOURCES CHECK")
+    logger.info("=" * 50)
+    
+    import os
+    
+    # Check environment variables
+    airflow_home = os.environ.get('AIRFLOW_HOME', 'Not set')
+    logger.info(f"AIRFLOW_HOME: {airflow_home}")
+    
+    # Check current working directory
+    logger.info(f"Current directory: {os.getcwd()}")
+    
+    # Check disk space (Mac/Linux)
+    try:
+        import shutil
+        total, used, free = shutil.disk_usage("/")
+        logger.info(f"Disk usage: {used // (2**30)} GB used / {total // (2**30)} GB total")
+        logger.info(f"Free space: {free // (2**30)} GB")
+    except Exception as e:
+        logger.warning(f"Could not check disk space: {e}")
+    
+    return "System check complete"
+
+# Create task instances
+start = EmptyOperator(
+    task_id='start',
+    dag=dag
+)
+
+check_env = PythonOperator(
+    task_id='check_python_environment',
+    python_callable=check_python_env,
+    provide_context=True,
+    dag=dag
+)
+
+process_data = PythonOperator(
+    task_id='process_data',
+    python_callable=process_sample_data,
+    provide_context=True,
+    dag=dag
+)
+
+validate = PythonOperator(
+    task_id='validate_data',
+    python_callable=validate_data,
+    provide_context=True,
+    dag=dag
+)
+
+test_imports = PythonOperator(
+    task_id='test_imports',
+    python_callable=test_common_imports,
+    provide_context=True,
+    dag=dag
+)
+
+check_system = PythonOperator(
+    task_id='check_system',
+    python_callable=check_system_resources,
+    provide_context=True,
+    dag=dag
+)
+
+# Bash command test
+bash_test = BashOperator(
+    task_id='bash_command_test',
+    bash_command='echo "Bash Operator Test: SUCCESS" && date',
+    dag=dag
+)
+
+complete = EmptyOperator(
+    task_id='tests_complete',
+    dag=dag
+)
+
+# Define task dependencies
+start >> check_env >> [test_imports, check_system]
+start >> process_data >> validate
+[test_imports, check_system, validate] >> bash_test >> complete
