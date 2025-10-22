@@ -38,3 +38,8 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+#LLM files
+CLAUDE.md
+
+

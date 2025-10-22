@@ -1,9 +1,9 @@
 #!/bin/bash
 
 airflow users create \
-    --username admin \
+    --username dev_user \
     --firstname Steve \
     --lastname G \
     --role Admin \
     --email steveg93@gmail.com \
-    --password admin
+    --password Sl1ght 

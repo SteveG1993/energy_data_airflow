@@ -4,7 +4,12 @@
       "Bash(~/airflow_venv/bin/airflow version)",
       "Read(//Users/stevengregoire/airflow_venv/bin/**)",
       "Bash(cat airflow.cfg)",
-      "Bash(~/airflow_venv/bin/airflow cheat-sheet)"
+      "Bash(~/airflow_venv/bin/airflow cheat-sheet)",
+      "Bash(~/airflow_venv/bin/airflow users list)",
+      "Bash(~/airflow_venv/bin/airflow db --help)",
+      "Bash(~/airflow_venv/bin/airflow config get-value core simple_auth_manager_users)",
+      "Bash(~/airflow_venv/bin/airflow config get-value core simple_auth_manager_passwords_file)",
+      "Bash(cat /Users/stevengregoire/airflow/standalone_admin_password.txt)"
     ],
     "deny": [],
     "ask": []
